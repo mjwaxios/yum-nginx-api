@@ -12,6 +12,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,8 +22,9 @@ import (
 	"time"
 
 	"github.com/FINRAOS/yum-nginx-api/repojson"
-	"github.com/go-ozzo/ozzo-routing"
+	routing "github.com/go-ozzo/ozzo-routing"
 	"github.com/go-ozzo/ozzo-routing/access"
+	"github.com/go-ozzo/ozzo-routing/auth"
 	"github.com/go-ozzo/ozzo-routing/content"
 	"github.com/go-ozzo/ozzo-routing/fault"
 	"github.com/go-ozzo/ozzo-routing/slash"
@@ -103,6 +105,18 @@ func repoRoute(c *routing.Context) error {
 	return c.Write(rJSON)
 }
 
+func mikeRoute(c *routing.Context) error {
+	c.Response.Header().Add("Version", commitHash)
+	return c.Write("Hello From Mike")
+}
+
+func checkname(c *routing.Context, username, password string) (auth.Identity, error) {
+	if username == "rey" && password == magickey {
+		return auth.Identity(username), nil
+	}
+	return nil, errors.New("invalid credential")
+}
+
 func main() {
 	if err := configValidate(); err != nil {
 		log.Fatalln(err.Error())
@@ -116,10 +130,13 @@ func main() {
 		content.TypeNegotiator(content.JSON))
 
 	// Disable logging on health endpoints
+	api.Use(auth.Basic(checkname))
+
 	api.Get("/health", healthRoute)
 	api.Use(access.Logger(log.Printf))
 	api.Post("/upload", uploadRoute)
 	api.Get("/repo", repoRoute)
+	api.Get("/mike", mikeRoute)
 
 	http.Handle("/", rtr)
 	log.Printf("yumapi built-on %s, version %s started on %s \n", builtOn, commitHash, port)

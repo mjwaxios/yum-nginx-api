@@ -38,6 +38,7 @@ var (
 	port       string
 	devMode    bool
 	maxRetries int
+	magickey   string
 	crCtr      int64
 	crPaths    = [2]string{"/bin/createrepo", "/usr/bin/createrepo"}
 	rJSON      []repojson.Repo
@@ -61,6 +62,7 @@ func configValidate() error {
 	viper.SetDefault("port", 8080)
 	viper.SetDefault("dev_mode", false)
 	viper.SetDefault("max_retries", 3)
+	viper.SetDefault("magickey", "unkar")
 
 	createRepo = viper.GetString("createrepo_workers")
 	maxLength = viper.GetInt64("max_content_length")
@@ -68,6 +70,7 @@ func configValidate() error {
 	port = viper.GetString("port")
 	devMode = viper.GetBool("dev_mode")
 	maxRetries = viper.GetInt("max_retries")
+	magickey = viper.GetString("magickey")
 
 	if viper.GetInt64("createrepo_workers") < 1 {
 		return errors.New(crError)
